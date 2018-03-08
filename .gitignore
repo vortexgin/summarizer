@@ -1,0 +1,6 @@
+/composer.phar
+/web
+/app
+/build/
+/vendor/
+!/bin/morphind.v.1.4

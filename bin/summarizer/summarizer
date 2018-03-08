@@ -1,0 +1,69 @@
+#!/usr/bin/env python
+from __future__ import absolute_import
+from __future__ import division, print_function, unicode_literals
+
+from sumy.parsers.html import HtmlParser
+from sumy.parsers.plaintext import PlaintextParser
+from sumy.summarizers.luhn import LuhnSummarizer as Summarizer
+from sumy.nlp.tokenizers import Tokenizer
+from sumy.nlp.stemmers import Stemmer
+from sumy.utils import get_stop_words
+
+import json
+import math
+import re
+import sys
+import os
+
+SENTENCES_COUNT = 5
+LANGUAGE = 'english'
+SW = os.path.dirname(os.path.abspath(__file__)) + '/stopwords_indo'
+
+def get_indo_stopwords():
+    with open(SW, 'r') as f:
+        c = f.read()
+        return [item for item in c.split('\n') if item != '']
+
+def normalize_text(text):
+    return re.sub('[^0-9a-zA-Z]+', '', text.replace('\xe2', ''))
+
+def parse(text, parser):
+    stemmer = Stemmer(LANGUAGE)
+    summarizer = Summarizer(stemmer)
+
+    def _get_best_sentences(sentences, count, rating, *args, **kwargs):
+        from operator import attrgetter
+        from collections import namedtuple
+        from sumy.utils import ItemsCount
+
+        SentenceInfo = namedtuple("SentenceInfo", ("sentence", "order", "rating",))
+
+        rate = rating
+        if isinstance(rating, dict):
+            assert not args and not kwargs
+            rate = lambda s: rating[s]
+
+        infos = (SentenceInfo(s, o, rate(s, *args, **kwargs))
+            for o, s in enumerate(sentences))
+
+        infos = sorted(infos, key=attrgetter("rating"), reverse=True)
+        if not isinstance(count, ItemsCount):
+            count = ItemsCount(count)
+        infos = count(infos)
+        infos = sorted(infos, key=attrgetter("order"))
+        highest = infos[0].rating
+
+        def _get_score(rating, order):
+            return round(rating / (order + 1) / highest * 100, 2)
+
+        return [{'sentence': re.sub(r'[^\x00-\x7F]+', '', unicode(info.sentence)), 'score': _get_score(info.rating, info.order)} for info in infos]
+
+    summarizer._get_best_sentences = _get_best_sentences
+    summarizer.stop_words = get_indo_stopwords()
+
+    return summarizer(parser.document, SENTENCES_COUNT)
+
+txt = sys.argv[1]
+tokenizer = Tokenizer(LANGUAGE)
+parser = PlaintextParser.from_string(txt, tokenizer)
+print(json.dumps(parse(txt, parser)))

@@ -1,0 +1,3 @@
+services:
+    vortexgin.summarizer.manager:
+        class: Vortexgin\SummarizerBundle\Manager\SummarizerManager
