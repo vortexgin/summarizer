@@ -3,3 +3,8 @@ vortexgin_summarizer_analyze:
     defaults: { _controller: VortexginSummarizerBundle:Default:analyze }
     requirements:
         _method: POST
+vortexgin_summarizer_analyze_url:
+    path:     /analyzeUrl
+    defaults: { _controller: VortexginSummarizerBundle:Default:analyzeUrl }
+    requirements:
+        _method: POST

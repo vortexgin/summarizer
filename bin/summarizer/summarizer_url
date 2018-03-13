@@ -65,5 +65,5 @@ def parse(text, parser):
 
 arg = sys.argv[1]
 tokenizer = Tokenizer(LANGUAGE)
-parser = PlaintextParser.from_string(arg, tokenizer)
+parser = HtmlParser.from_url(arg, tokenizer)
 print(json.dumps(parse(arg, parser)))
